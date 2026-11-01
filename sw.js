@@ -1,4 +1,4 @@
-const CACHE = "ptm-ios-v1.0.8";
+const CACHE = "ptm-ios-final-v2.0.0";
 const CORE = [
   "./",
   "index.html",
