@@ -346,7 +346,7 @@ input:focus,select:focus,textarea:focus{transform:translateY(-1px)}
 #dashRitRoutes .rit-route-item[class*="rit-tone-"] strong,.rit-entry[class*="rit-tone-"] .rit-entry-total strong{color:var(--rit-tone);text-shadow:0 0 14px color-mix(in srgb,var(--rit-tone) 18%,transparent)}
 .rit-rank{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;flex:0 0 26px;font-size:10px;font-weight:850;color:var(--rit-tone);background:color-mix(in srgb,var(--rit-tone) 10%,rgba(255,255,255,.035));border:1px solid color-mix(in srgb,var(--rit-tone) 24%,rgba(255,255,255,.08))}
 .rit-route-main{min-width:0;flex:1}.rit-route-name{overflow-wrap:anywhere}
-.rit-day-item{padding:12px 13px}.rit-day-date{min-width:0;flex:1}.rit-day-values{display:flex;flex-direction:column;align-items:flex-end;gap:3px;white-space:nowrap}.rit-day-values strong{font-size:14px;color:#edf4ff}.rit-day-values span{font-size:10px;color:#9da9b8}
+.rit-day-item{padding:12px 13px;display:block}.rit-day-top{display:flex;align-items:center;justify-content:space-between;gap:14px}.rit-day-date{min-width:0;flex:1}.rit-day-values{display:flex;flex-direction:column;align-items:flex-end;gap:3px;white-space:nowrap}.rit-day-values strong{font-size:14px;color:#edf4ff}.rit-day-values span{font-size:10px;color:#9da9b8}.rit-day-routes{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px}.rit-day-route-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:10px;color:#aab5c3}.rit-day-route-row span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rit-day-route-row strong{font-size:10px;color:#dce6f3;font-weight:800;white-space:nowrap}
 
 #rit .field>span{font-weight:720;color:#b7c3d2}.rit-shift{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:4px 8px;font-size:9px;font-weight:820;letter-spacing:.035em;border:1px solid transparent;white-space:nowrap}
 .rit-shift-siang{color:#ffd27a;background:rgba(240,184,92,.10);border-color:rgba(240,184,92,.24);box-shadow:0 0 18px rgba(240,184,92,.05)}
@@ -1308,3 +1308,17 @@ html[data-theme="light"] .analytics-card strong,html[data-theme="light"] .report
 html[data-theme="light"] .analytics-bar-track{background:rgba(78,97,126,.08)!important}
 html[data-theme="light"] .route-actions .route-enable{color:#2e7b4e;background:rgba(55,170,103,.08)!important}
 html[data-theme="light"] .route-actions .route-disable{color:#ae4b4b;background:rgba(207,84,84,.07)!important}
+
+/* v2.0.2 — collapsible daily ritase route detail */
+.rit-day-item{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer}.rit-day-item:active{transform:none}.rit-day-hint{font-size:9px;color:#7f8a99;margin-top:3px}.rit-day-item[aria-expanded="true"]{border-color:rgba(112,162,255,.28);background:linear-gradient(180deg,rgba(30,37,50,.92),rgba(18,23,32,.92))}.rit-day-item[aria-expanded="true"] .rit-day-hint{color:#8fb4ff}.rit-day-routes.hidden{display:none!important}
+/* v2.0.3 — daily route total value */
+.rit-day-route-values{display:flex;align-items:center;gap:9px;white-space:nowrap}.rit-day-route-values strong{font-size:10px;color:#dce6f3;font-weight:800}.rit-day-route-values em{font-style:normal;font-size:10px;color:#9da9b8;font-weight:650}
+@media(max-width:420px){.rit-day-route-row{gap:8px}.rit-day-route-values{gap:7px}.rit-day-route-values strong,.rit-day-route-values em{font-size:9.5px}}
+
+/* v2.0.4 — history performance safety */
+.history-load-wrap{display:flex;justify-content:center;margin-top:12px}
+#historyLoadMore{min-width:180px}
+@supports (content-visibility:auto){#historyResults>.item{content-visibility:auto;contain-intrinsic-size:74px}}
+
+/* v2.0.5 — collapse import safety */
+.rit-day-routes[hidden]{display:none!important}
