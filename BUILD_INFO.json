@@ -1,6 +1,6 @@
 {
   "app": "PTM",
   "platform": "iPhone PWA",
-  "version": "2.0.1",
-  "change": "Rincian route per hari pada Rekap Harian Ritase"
+  "version": "2.0.8",
+  "change": "Menu Ritase hanya menampilkan transaksi hari ini; histori lama tetap tersimpan"
 }
