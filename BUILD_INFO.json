@@ -1,6 +1,7 @@
 {
   "app": "PTM",
   "platform": "iPhone PWA",
-  "version": "2.0.8",
-  "change": "Menu Ritase hanya menampilkan transaksi hari ini; histori lama tetap tersimpan"
+  "version": "2.1.0",
+  "change": "Absensi shift Siang/Malam, Ritase default mengikuti Absensi, perpanjangan Ritase saat Lembur Shift Siang sampai 00.00, pengaman absensi ganda",
+  "release": "Absensi Shift + Lembur"
 }
