@@ -237,7 +237,7 @@ if(location.protocol!=='file:'&&'serviceWorker' in navigator){
     try{
       const reg=await navigator.serviceWorker.register('sw.js',{scope:'./'});
       await navigator.serviceWorker.ready;
-      const cache=await caches.open('ptm-ios-final-v2.1.2');
+      const cache=await caches.open('ptm-ios-final-v2.1.3');
       const required=['index.html','styles.css','app.js','report-pdf.js','manifest.webmanifest'];
       const ok=(await Promise.all(required.map(x=>cache.match(x)))).every(Boolean);
       if(el){
