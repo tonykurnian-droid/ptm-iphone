@@ -170,6 +170,7 @@ function buildReportData(){
  const top=routes[0]||null,avg=days.length?r.count/days.length:0;
  return {a,r,routes,days,sAll,fAll,fExp,mealCount,mealMoney,top,avg};
 }
+let reportRoutesExpanded=false;
 function renderReport(){const d=buildReportData();
  $('reportPeriod').textContent=`${monthName(activePeriod())} • ${ritPeriodRange(activePeriod())}`;
  $('reportAbs').textContent=`${d.a.Hadir} hari`; $('reportAbsMoney').textContent=rp(d.a.total);
@@ -177,8 +178,9 @@ function renderReport(){const d=buildReportData();
  $('reportSav').textContent=rp(d.sAll.balance); $('reportSavTarget').textContent=`Target ${rp(state.settings.target||0)}`;
  $('reportExpense').textContent=rp(d.fExp.out); $('reportIncome').textContent=`Pemasukan ${rp(d.fAll.inc)}`;
  $('reportAbsDetail').innerHTML=[reportLine('Hadir',d.a.Hadir+' hari'),reportLine('Overshift',d.a.Overshift+'×'),reportLine('Lembur',d.a.Lembur+'×'),reportLine('Izin / Sakit / Libur',`${d.a.Izin} / ${d.a.Sakit} / ${d.a.Libur}`),reportLine('Nilai Absensi',rp(d.a.total))].join('');
- const routeLines=d.routes.slice(0,5).map((x,i)=>reportLine(`#${i+1} ${x.route}`,`${x.count} Rit`,rp(x.money))).join('');
+ const routeLines=d.routes.slice(0,reportRoutesExpanded?undefined:5).map((x,i)=>reportLine(`#${i+1} ${x.route}`,`${x.count} Rit`,rp(x.money))).join('');
  $('reportRitDetail').innerHTML=reportLine('Total Ritase',d.r.count+' Rit',rp(d.r.money))+reportLine('Rata-rata / hari',`${d.avg.toFixed(1)} Rit`,`${d.days.length} hari kerja`)+(routeLines||reportLine('Route','Belum ada data'));
+ const more=$('reportRoutesMore');if(more){more.classList.toggle('hidden',d.routes.length<=5);more.textContent=reportRoutesExpanded?'Tampilkan 5 Teratas':`Tampilkan Semua (${d.routes.length} Route)`;}
  $('reportMealDetail').innerHTML=reportLine('Periode Kasbon',`${mealPeriodRange(activeMealPeriod())}`)+reportLine('Sejak reset manual',`${d.mealCount} Kasbon`,rp(d.mealMoney));
  const balance=d.fAll.balance,progress=state.settings.target>0?Math.min(999,Math.round((d.sAll.balance/state.settings.target)*100)):0;
  const insights=[];
@@ -235,8 +237,8 @@ if(location.protocol!=='file:'&&'serviceWorker' in navigator){
     try{
       const reg=await navigator.serviceWorker.register('sw.js',{scope:'./'});
       await navigator.serviceWorker.ready;
-      const cache=await caches.open('ptm-ios-final-v2.1.0');
-      const required=['index.html','styles.css','app.js','manifest.webmanifest'];
+      const cache=await caches.open('ptm-ios-final-v2.1.2');
+      const required=['index.html','styles.css','app.js','report-pdf.js','manifest.webmanifest'];
       const ok=(await Promise.all(required.map(x=>cache.match(x)))).every(Boolean);
       if(el){
         el.textContent=ok?'✓ Siap Offline — aman digunakan tanpa internet':'Mode offline sedang disiapkan. Tetap online sebentar lalu buka ulang aplikasi.';
@@ -265,8 +267,60 @@ push('Keuangan','Pemasukan',rp(d.fAll.inc));push('Keuangan','Pengeluaran Periode
 push('Kasbon Makan','Periode Kasbon',mealPeriodRange(activeMealPeriod()));push('Kasbon Makan','Sejak Reset Manual',d.mealCount+' Kasbon',rp(d.mealMoney));
 return '\ufeff'+[['Bagian','Item','Nilai','Detail'],...rows].map(r=>r.map(csvCell).join(',')).join('\n')}
 function downloadTextFile(name,text,type){const blob=new Blob([text],{type:type||'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1200)}
-if($('csvReportBtn'))$('csvReportBtn').onclick=()=>{const name=`PTM-Laporan-${activePeriod()}.csv`;downloadTextFile(name,buildReportCsv(),'text/csv;charset=utf-8');showToast('Laporan CSV dibuat.','success',2400)};
-if($('printReportBtn'))$('printReportBtn').onclick=()=>{renderReport();document.body.classList.add('print-report');requestAnimationFrame(()=>setTimeout(()=>{window.print();setTimeout(()=>document.body.classList.remove('print-report'),500)},60))};
+// ===== v2.1.1: Modul + periode export, generated only when requested =====
+const reportModules=[['abs','Absensi'],['rit','Ritase'],['sav','Tabungan'],['fin','Keuangan'],['meal','Kasbon Makan']];
+function selectedReportModules(){const selected=[...document.querySelectorAll('.report-module-check:checked')].map(e=>e.value);return reportModules.filter(x=>selected.includes(x[0]));}
+function periodBack(ym,n){const [y,m]=ym.split('-').map(Number);const d=new Date(y,m-1-n,1,12);return period(d)}
+function reportPeriodSet(kind){const choice=$('reportExportPeriod')?.value||'1';const includeActive=!!$('reportIncludeActive')?.checked;const anchor=kind==='meal'?activeMealPeriod():kind==='rit'?activeRitPeriod():activePeriod();if(choice==='all')return includeActive?null:new Set(['__ALL_COMPLETED__',anchor]);const count=Math.max(1,Math.min(3,Number(choice)||1));return new Set(Array.from({length:count},(_,i)=>periodBack(anchor,i+(includeActive?0:1))))}
+function chosenRows(kind){const source=state[kind]||[],set=reportPeriodSet(kind);return source.filter(x=>{const p=kind==='meal'?mealPeriodFromYmd(x.date):kind==='rit'?ritPeriodFromYmd(x.workDate):bookPeriodFromYmd(x.date);return !set||(set.has('__ALL_COMPLETED__')?!set.has(p):set.has(p))}).slice().sort((a,b)=>String(b.inputIso||b.iso||'').localeCompare(String(a.inputIso||a.iso||'')))}
+const readableType=(kind,v)=>kind==='sav'?({deposit:'Setor',withdraw:'Pakai',return:'Kembalikan'}[v]||v):kind==='fin'?({in:'Pemasukan',out:'Pengeluaran'}[v]||v):(v||'-');
+function rowDetails(kind,x){const date=kind==='rit'?x.workDate:x.date,tm=kind==='rit'?x.inputTime:x.time,rate=kind==='rit'?x.rate:x.rate;
+ const common=[['Tanggal',date||'-'],['Jam',tm||'-']];
+ if(kind==='abs')return [...common,['Tanggal Kerja',x.workDate||date],['Shift',x.shift||'-'],['Status',x.status||'-'],['Keterangan',x.note||'-'],['Uang Makan',x.status==='Hadir'?Number(x.snapshot?.meal||0):0],['Basic',x.status==='Hadir'?Number(x.snapshot?.basic||0):0],['Lembur',x.status==='Lembur'?Number(x.snapshot?.overtime||0):0]];
+ if(kind==='rit')return [...common,['Waktu Input',x.inputDate+' '+(x.inputTime||'')],['Shift',x.shift||'-'],['Route',x.route||'-'],['Jumlah Ritase',Number(x.count)||0],['Tarif per Rit',Number(rate)||0],['Total',Number(x.total)||0],['Keterangan',x.note||'-']];
+ if(kind==='sav')return [...common,['Jenis',readableType(kind,x.type)],['Nominal',Number(x.amount)||0],['Keterangan',x.note||'-']];
+ if(kind==='fin')return [...common,['Jenis',readableType(kind,x.type)],['Nominal',Number(x.amount)||0],['Keterangan',x.note||'-']];
+ return [...common,['Jumlah Kasbon',Number(x.count)||0],['Harga per 1',Number(x.rate??x.snapshot?.mealRate)||0],['Total',Number(x.total)||0],['Keterangan',x.note||'-']];}
+const moneyFields=new Set(['Uang Makan','Basic','Lembur','Tarif per Rit','Total','Nominal','Harga per 1']);
+function exportModel(){const modules=selectedReportModules();if(!modules.length)throw Error('Pilih minimal satu modul.');const periodChoice=$('reportExportPeriod').value;const includeActive=!!$('reportIncludeActive')?.checked;return {includeActive,modules:modules.map(([id,label])=>({id,label,rows:chosenRows(id)})),periodChoice,generatedAt:new Date().toLocaleString('id-ID')};}
+function summaryForModule(id,rows){
+ if(id==='abs'){const x=calcAbs(rows);return [['Hadir',x.Hadir+' hari'],['Overshift',x.Overshift+'x'],['Lembur',x.Lembur+'x'],['Izin/Sakit/Libur',`${x.Izin}/${x.Sakit}/${x.Libur}`],['Total nilai absensi',rp(x.total)]]}
+ if(id==='rit'){const x=calcRit(rows);return [['Total Ritase',x.count+' Rit'],['Total pendapatan Ritase',rp(x.money)],...calcRitByRoute(rows).map((r,i)=>['Route #'+(i+1)+' '+r.route,r.count+' Rit / '+rp(r.money)])]}
+ if(id==='sav'){const x=calcSav(rows);return [['Setoran',rp(x.dep)],['Pemakaian',rp(x.wd)],['Pengembalian',rp(x.ret)],['Selisih transaksi terpilih',rp(x.balance)]]}
+ if(id==='fin'){const x=calcFin(rows);return [['Pemasukan terpilih',rp(x.inc)],['Pengeluaran terpilih',rp(x.out)],['Selisih transaksi terpilih',rp(x.balance)]]}
+ return [['Jumlah kasbon',rows.reduce((n,r)=>n+(Number(r.count)||0),0)+'x'],['Total kasbon',rp(rows.reduce((n,r)=>n+(Number(r.total)||0),0))]];
+}
+function reportLines(model){const lines=[{kind:'heading',text:'Pilihan periode: '+(model.periodChoice==='all'?'Semua Periode':model.periodChoice+' periode terakhir')+' ('+(model.includeActive?'termasuk periode berjalan':'hanya periode selesai')+')'},{kind:'normal',text:'Dibuat: '+model.generatedAt},null];
+ for(const {id,label,rows} of model.modules){lines.push({kind:'heading',text:label.toUpperCase()+' - '+rows.length+' transaksi'});for(const [k,v] of summaryForModule(id,rows))lines.push({kind:'normal',text:k+': '+v});lines.push(null,{kind:'minor',text:'RINCIAN TRANSAKSI'});if(!rows.length)lines.push('Tidak ada transaksi pada periode yang dipilih.');
+ rows.forEach((x,i)=>{const p=id==='meal'?mealPeriodFromYmd(x.date):id==='rit'?ritPeriodFromYmd(x.workDate):bookPeriodFromYmd(x.date);lines.push({kind:'minor',text:`#${i+1} - Periode ${p}`});for(const [k,v] of rowDetails(id,x))lines.push(k+': '+(moneyFields.has(k)?rp(v):String(v??'-')));lines.push(null)});lines.push(null)}return lines;}
+function fullReportCsv(model){const rows=[['Modul','Periode','Nomor','Tanggal','Jam','Informasi','Nilai']];for(const {id,label,rows:items} of model.modules){for(const [key,value] of summaryForModule(id,items))rows.push([label,'Ringkasan','','','',key,value]);const periodOf=x=>id==='meal'?mealPeriodFromYmd(x.date):id==='rit'?ritPeriodFromYmd(x.workDate):bookPeriodFromYmd(x.date);items.forEach((x,i)=>{rowDetails(id,x).forEach(([key,value])=>rows.push([label,periodOf(x),i+1,id==='rit'?x.workDate:x.date,id==='rit'?x.inputTime:x.time,key,value]))});}return '\ufeff'+rows.map(x=>x.map(csvCell).join(',')).join('\r\n')}
+function saveBlob(filename,blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+function bytesBase64(bytes){let str='';const size=0x8000;for(let i=0;i<bytes.length;i+=size)str+=String.fromCharCode.apply(null,bytes.subarray(i,i+size));return btoa(str)}
+let reportExportBusy=false;
+async function doReportExport(format){if(reportExportBusy)return;reportExportBusy=true;const buttons=['printReportBtn','csvReportBtn'].map($).filter(Boolean);buttons.forEach(b=>b.disabled=true);
+ try{
+  const model=exportModel();const id=ymd(now()),count=model.periodChoice==='all'?'Semua':model.periodChoice;const filename=`PTM-Laporan-${count}Periode-${model.includeActive?'DenganAktif':'Selesai'}-${id}.${format}`;
+  // Generate on explicit click only; keep browser download inside user activation.
+  if(format==='csv'){
+   const csv=fullReportCsv(model);
+   if(window.AndroidBridge&&typeof window.AndroidBridge.exportFile==='function')window.AndroidBridge.exportFile('text/csv',filename,btoa(unescape(encodeURIComponent(csv))));
+   else saveBlob(filename,new Blob([csv],{type:'text/csv;charset=utf-8'}));
+  }else{
+   if(!window.PTMReportPDF)throw Error('Modul PDF offline belum dimuat.');
+   const bytes=window.PTMReportPDF.create(reportLines(model),'PTM - Laporan dan Riwayat');
+   if(window.AndroidBridge&&typeof window.AndroidBridge.exportFile==='function')window.AndroidBridge.exportFile('application/pdf',filename,bytesBase64(bytes));
+   else saveBlob(filename,new Blob([bytes],{type:'application/pdf'}));
+  }
+  showToast('File '+format.toUpperCase()+' siap. Simpan melalui perangkat.','success',3000);
+ }catch(e){console.error('PTM export error',e);showToast('Ekspor gagal: '+(e?.message||'kesalahan file'),'error',4000)}finally{reportExportBusy=false;buttons.forEach(b=>b.disabled=false)}}
+if($('reportAllModules'))$('reportAllModules').onchange=e=>{document.querySelectorAll('.report-module-check').forEach(x=>x.checked=e.target.checked)};
+document.querySelectorAll('.report-module-check').forEach(x=>x.onchange=()=>{if($('reportAllModules'))$('reportAllModules').checked=[...document.querySelectorAll('.report-module-check')].every(y=>y.checked)});
+if($('reportRoutesMore'))$('reportRoutesMore').onclick=()=>{reportRoutesExpanded=!reportRoutesExpanded;renderReport()};
+if($('reportExportPeriod'))$('reportExportPeriod').onchange=()=>{reportRoutesExpanded=false};
+if($('csvReportBtn'))$('csvReportBtn').onclick=()=>doReportExport('csv');
+if($('printReportBtn'))$('printReportBtn').onclick=()=>doReportExport('pdf');
+if($('reportPrintPaperBtn'))$('reportPrintPaperBtn').onclick=()=>{renderReport();document.body.classList.add('print-report');if(window.AndroidBridge&&typeof window.AndroidBridge.printPage==='function'){window.AndroidBridge.printPage();setTimeout(()=>document.body.classList.remove('print-report'),7000)}else{window.print();setTimeout(()=>document.body.classList.remove('print-report'),1000)}};
+
 window.addEventListener('afterprint',()=>document.body.classList.remove('print-report'));
 moneyInputs();setTabs();setDashboardAbs();setDashboardRit();setDashboardSav();setDashboardFin();populateRitDates();populateMealDates();setMealTimeNow();updateMealCalc();syncAbsShiftDefault();syncRitShiftFromAbs();fullRender();
 })();

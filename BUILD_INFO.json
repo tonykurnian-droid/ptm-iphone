@@ -1,7 +1,6 @@
 {
-  "app": "PTM",
-  "platform": "iPhone PWA",
-  "version": "2.1.0",
-  "change": "Absensi shift Siang/Malam, Ritase default mengikuti Absensi, perpanjangan Ritase saat Lembur Shift Siang sampai 00.00, pengaman absensi ganda",
-  "release": "Absensi Shift + Lembur"
+  "version": "2.1.2",
+  "name": "PTM Export Exclude Active Period by Default",
+  "date": "2026-11-11",
+  "offline": true
 }

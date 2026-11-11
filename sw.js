@@ -1,9 +1,10 @@
-const CACHE = "ptm-ios-final-v2.1.0";
+const CACHE = "ptm-ios-final-v2.1.2";
 const CORE = [
   "./",
   "index.html",
   "styles.css",
   "app.js",
+  "report-pdf.js",
   "manifest.webmanifest",
   "icon-192.png",
   "icon-512.png",

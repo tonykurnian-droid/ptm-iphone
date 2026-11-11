@@ -1,0 +1,1 @@
+PTM v2.1.1: Ekspor PDF langsung offline, CSV rinci berdasarkan 1/2/3/semua periode dan modul, Top 5 Ritase + tampilkan semua. Jangan hapus aplikasi lama untuk menjaga data lokal. Backup JSON sebelum update.

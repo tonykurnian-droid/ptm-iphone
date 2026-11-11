@@ -1,0 +1,1 @@
+PTM v2.1.2 - Default ekspor PDF/CSV hanya periode selesai. Opsi Sertakan periode berjalan tidak dicentang secara default. Jumlah 1/2/3 menghitung periode terpilih (periode aktif hanya ikut bila opsi dicentang). Semua Periode mengecualikan periode aktif kecuali diminta. Periode Kasbon 11-10 tetap independen. Data tersimpan tidak diubah.
